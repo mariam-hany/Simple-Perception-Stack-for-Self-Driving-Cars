@@ -700,9 +700,11 @@ def main():
     filePath = None # --- initial Value ---
     if filePath is None:
         filename = "challenge_video.mp4"
+        output_filename = "OUTVideo.mp4"
     else:
         filePath = sys.argv[1]
         filename = filePath.split("/")[-1]
+        output_filename = sys.argv[2] # --- to save the file in totally another path ---
 
     # Load a video
     cap = cv2.VideoCapture(filename)
