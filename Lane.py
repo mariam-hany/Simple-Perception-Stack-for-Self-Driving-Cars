@@ -186,7 +186,54 @@ class Lane:
         self.center_offset = center_offset
 
         return center_offset
+    
+        def get_line_markings(self, frame=None):
+        
+        if frame is None:
+            frame = self.orig_frame
+            #frame = self.warped_frame
 
+        # Convert the video frame from BGR (blue, green, red)
+        # color space to HLS (hue, saturation, lightness).
+        hls = cv2.cvtColor(frame, cv2.COLOR_BGR2HLS)
+
+        ################### Isolate possible lane line edges ######################
+
+        # Perform Sobel edge detection on the L (lightness) channel of
+      
+        _, sxbinary = edge.threshold(hls[:, :, 1], thresh=(70, 255))
+        sxbinary = edge.blur_gaussian(sxbinary, ksize=3)  # Reduce noise
+
+        # 1s will be in the cells with the highest Sobel derivative values
+        # (i.e. strongest lane line edges)
+        sxbinary = edge.mag_thresh(sxbinary, sobel_kernel=3, thresh=(3, 255))
+
+        ######################## Isolate possible lane lines ######################
+
+        # Perform binary thresholding on the S (saturation) channel
+      
+        s_channel = hls[:, :, 2]  # use only the saturation channel data
+        _, s_binary = edge.threshold(s_channel, (50, 255),thresh_type=cv2.THRESH_BINARY_INV)
+
+        # Perform binary thresholding on the R (red) and green  channel of the
+    
+        _, r_thresh = edge.threshold(frame[:, :, 2], thresh=(100, 255) )
+        #edit
+        _, g_thresh = edge.threshold(frame[:, :, 2], thresh=(100, 255) )
+
+
+
+        # Lane lines should be pure in color and have high red  and green channels values
+        # Bitwise AND operation to reduce noise and black-out any pixels that
+        rs_binary1 = cv2.bitwise_and(s_binary, r_thresh)
+        rs_binary = cv2.bitwise_and(rs_binary1, g_thresh)
+
+
+        ### Combine the possible lane lines with the possible lane line edges ####
+        self.lane_line_markings = cv2.bitwise_or(rs_binary, sxbinary.astype(
+            np.uint8))
+        return self.lane_line_markings
+    
     def calculate_curvature(self, print_to_terminal=False):
 
         y_eval = np.max(self.ploty)
@@ -262,6 +309,17 @@ class Lane:
 
         return self.histogram
 
+def increase_brightness(img, value = 30):
+    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+    h, s, v = cv2.split(hsv)
+
+    lim = 255 - value
+    v[v > lim] = 255
+    v[v <= lim] += value
+
+    final_hsv = cv2.merge((h, s, v))
+    img = cv2.cvtColor(final_hsv, cv2.COLOR_HSV2BGR)
+    return img    
 # --- main function to run ---
 def main():
     # Load a video
@@ -279,6 +337,10 @@ def main():
 
         # Capture one frame at a time
         success, frame = cap.read()
+            #  improve video brightness
+        frame = increase_brightness(frame, value=60)
+        #  improve video contrast
+        cv2.normalize(frame, frame,45, 255, cv2.NORM_MINMAX)
 
         if success:
 
@@ -292,6 +354,12 @@ def main():
 
             # Create a Lane object
             lane_obj = Lane(orig_frame=original_frame)
+            
+             # Perform thresholding to isolate lane lines
+            lane_line_markings = lane_obj.get_line_markings()
+
+            # Plot the region of interest on the image
+            lane_obj.plot_roi(plot=False)
 
             warped_frame = lane_obj.perspective_transform(plot=False)
 
