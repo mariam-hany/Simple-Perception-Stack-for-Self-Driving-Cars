@@ -154,7 +154,7 @@ class Lane:
 
         return self.warped_frame
     
-        def overlay_lane_lines(self, plot=False):
+    def overlay_lane_lines(self, plot=False):
         """
         Overlay lane lines on the original frame
         :param: Plot the lane lines if True
@@ -196,7 +196,7 @@ class Lane:
 
         return result
     
-        def get_lane_line_previous_window(self, left_fit, right_fit, plot=False):
+    def get_lane_line_previous_window(self, left_fit, right_fit, plot=False):
         """
         Use the lane line from the previous sliding window to get the parameters
         for the polynomial line for filling in the lane line
@@ -325,7 +325,7 @@ class Lane:
             plt.show()
 
 
-        def get_lane_line_indices_sliding_windows(self, plot=False):
+    def get_lane_line_indices_sliding_windows(self, plot=False):
         """
         Get the indices of the lane line pixels using the
         sliding windows technique.
