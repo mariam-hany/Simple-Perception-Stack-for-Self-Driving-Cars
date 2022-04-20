@@ -519,7 +519,7 @@ class Lane:
         # Convert the video frame from BGR (blue, green, red)
         # color space to HLS (hue, saturation, lightness).
         hls = cv2.cvtColor(frame, cv2.COLOR_BGR2HLS)
-
+        #cv2.imshow("HLS", hls)
         ################### Isolate possible lane line edges ######################
 
         # Perform Sobel edge detection on the L (lightness) channel of
@@ -550,7 +550,7 @@ class Lane:
         # Bitwise AND operation to reduce noise and black-out any pixels that
         rs_binary1 = cv2.bitwise_and(s_binary, r_thresh)
         rs_binary = cv2.bitwise_and(rs_binary1, g_thresh)
-
+        #cv2.imshow("RS Binary", rs_binary)
 
         ### Combine the possible lane lines with the possible lane line edges ####
         self.lane_line_markings = cv2.bitwise_or(rs_binary, sxbinary.astype(
