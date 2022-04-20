@@ -10,6 +10,8 @@ import matplotlib.pyplot as plt
 filename = 'challenge_video.mp4'
 #filename = 'harder_challenge_video.mp4'
 
+# --- Global Variable for DEBUG Mode ---
+debugFlag = False
 
 file_size = (1920, 1080)  # Assumes 1920x1080 mp4
 scale_ratio = 1  # Option to scale to fraction of original size.
@@ -700,11 +702,15 @@ def main():
     filePath = None # --- initial Value ---
     if filePath is None:
         filename = "challenge_video.mp4"
-        output_filename = "OUTVideo.mp4"
+        output_filename = "OutVideo.mp4"
     else:
         filePath = sys.argv[1]
         filename = filePath.split("/")[-1]
         output_filename = sys.argv[2] # --- to save the file in totally another path ---
+
+    if sys.argv[3] == "True" or sys.argv[3] == "1" or sys.argv[3] == 1: # --- Debug mode ---
+        debugFlag = True
+        
 
     # Load a video
     cap = cv2.VideoCapture(filename)
@@ -743,24 +749,24 @@ def main():
             lane_line_markings = lane_obj.get_line_markings()
 
             # Plot the region of interest on the image
-            lane_obj.plot_roi(plot=False)
+            lane_obj.plot_roi(plot=debugFlag)
 
-            warped_frame = lane_obj.perspective_transform(plot=False)
+            warped_frame = lane_obj.perspective_transform(plot=debugFlag)
 
 
             # ---
             # Generate the image histogram to serve as a starting point
             # for finding lane line pixels
-            histogram = lane_obj.calculate_histogram(plot=False)
+            histogram = lane_obj.calculate_histogram(plot=debugFlag)
             
             # Find lane line pixels using the sliding window method
             left_fit, right_fit = lane_obj.get_lane_line_indices_sliding_windows(
-                plot= False)
+                plot= debugFlag)
             # Fill in the lane line
-            lane_obj.get_lane_line_previous_window(left_fit, right_fit, plot=False)
+            lane_obj.get_lane_line_previous_window(left_fit, right_fit, plot=debugFlag)
             
             # Overlay lines on the original frame
-            frame_with_lane_lines = lane_obj.overlay_lane_lines(plot=False)
+            frame_with_lane_lines = lane_obj.overlay_lane_lines(plot=debugFlag)
             
             # Calculate lane line curvature (left and right lane lines)
             lane_obj.calculate_curvature(print_to_terminal=False)
