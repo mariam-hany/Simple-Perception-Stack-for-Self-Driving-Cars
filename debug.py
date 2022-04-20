@@ -4,12 +4,12 @@ import numpy as np  # Import the NumPy scientific computing library
 import edge_detection as edge  # Handles the detection of lane lines
 import matplotlib.pyplot as plt
 
-
 # Make sure the video file is in the same directory as your code
-#filename = 'project_video.mp4'
-filename = 'challenge_video.mp4'
-#filename = 'harder_challenge_video.mp4'
+# filename = 'project_video.mp4'
 
+# filename = 'harder_challenge_video.mp4'
+
+# --- Global Variable for DEBUG Mode ---
 
 
 file_size = (1920, 1080)  # Assumes 1920x1080 mp4
@@ -33,9 +33,8 @@ prev_rightx2 = None
 prev_righty2 = None
 prev_left_fit2 = []
 prev_right_fit2 = []
-centerOfLane = 500 # --- initialValue ---
-carPosition = 640 # --- initially ---
-
+centerOfLane = 500  # --- initialValue ---
+carPosition = 640  # --- initially ---
 
 
 class Lane:
@@ -43,7 +42,8 @@ class Lane:
     Represents a lane on a road.
     """
 
-    def __init__(self, orig_frame):
+    def __init__(self, orig_frame, filename):
+        self.filename = filename
 
         self.orig_frame = orig_frame
 
@@ -62,24 +62,26 @@ class Lane:
         height = self.orig_image_size[1]
         self.width = width
         self.height = height
-         # Four corners of the trapezoid-shaped region of interest
+        # Four corners of the trapezoid-shaped region of interest
         # You need to find these corners manually.
         centerOfCar = carPosition / 2.0
-        if filename == "project_video.mp4"  : #projectVideo
+        if self.filename == "project_video.mp4":  # projectVideo
+            print('here111111')
             self.roi_points = np.float32([
                 (int(0.421 * width), int(0.68 * height)),  # Top-left corner
                 (183, height - 1),  # Bottom-left corner
                 (int(0.958 * width), height - 1),  # Bottom-right corner
                 (int(0.61 * width), int(0.682 * height))  # Top-right corner
             ])
-        elif filename == "challenge_video.mp4":
+        elif self.filename == "challenge_video.mp4":
             self.roi_points = np.float32([  # ---
+
                 (int(0.478 * width), int(0.71 * height)),  # Top-left corner
                 (450, height - 1),  # Bottom-left corner
                 (int(1.2 * width), height - 1),  # Bottom-right corner
                 (int(0.68 * width), int(0.71 * height))  # Top-right corner
             ])
-        elif filename == "harder_challenge_video.mp4":
+        elif self.filename == "harder_challenge_video.mp4":
             self.roi_points = np.float32([  # ---
                 (int(0.411 * width), int(0.68 * height)),  # Top-left corner
                 (183, height - 1),  # Bottom-left corner
@@ -121,8 +123,8 @@ class Lane:
         self.righty = None
 
         # Pixel parameters for x and y dimensions
-        self.YM_PER_PIX = 7.0/400 #7.0 / 400  # meters per pixel in y dimension
-        self.XM_PER_PIX = 3.7/255 #3.7 / 255  # meters per pixel in x dimension
+        self.YM_PER_PIX = 7.0 / 400  # 7.0 / 400  # meters per pixel in y dimension
+        self.XM_PER_PIX = 3.7 / 255  # 3.7 / 255  # meters per pixel in x dimension
 
         # Radii of curvature and offset
         self.left_curvem = None
@@ -169,7 +171,7 @@ class Lane:
             cv2.destroyAllWindows()
 
         return self.warped_frame
-    
+
     def overlay_lane_lines(self, plot=False):
         """
         Overlay lane lines on the original frame
@@ -211,7 +213,7 @@ class Lane:
             plt.show()
 
         return result
-    
+
     def get_lane_line_previous_window(self, left_fit, right_fit, plot=False):
         """
         Use the lane line from the previous sliding window to get the parameters
@@ -353,7 +355,6 @@ class Lane:
         """
         Get the indices of the lane line pixels using the
         sliding windows technique.
-
         :param: plot Show plot or not
         :return: Best fit lines for the left and right lines of the current lane
         """
@@ -500,7 +501,7 @@ class Lane:
             plt.show()
 
         return self.left_fit, self.right_fit
-    
+
     def calculate_car_position(self, print_to_terminal=False):
 
         car_location = self.orig_frame.shape[1] / 2
@@ -519,62 +520,84 @@ class Lane:
         global centerOfLane
         global carPosition
         carPosition = car_location
-        if center_lane < 600 or center_lane >450:
+        if center_lane < 600 or center_lane > 450:
             centerOfLane = center_lane
         else:
             centerOfLane = 500
 
         if print_to_terminal == True:
-
-            print("Car",str(center_offset) + 'cm')
-            print("Lane",str(center_lane) + 'cm')
-            print("CarLocation",str(car_location) + 'cm')
+            print("Car", str(center_offset) + 'cm')
+            print("Lane", str(center_lane) + 'cm')
+            print("CarLocation", str(car_location) + 'cm')
 
         self.center_offset = center_offset
 
         return center_offset
-    
+
     def get_line_markings(self, frame=None):
 
         if frame is None:
             frame = self.orig_frame
-            #frame = self.warped_frame
+            # frame = self.warped_frame
 
         # Convert the video frame from BGR (blue, green, red)
         # color space to HLS (hue, saturation, lightness).
         hls = cv2.cvtColor(frame, cv2.COLOR_BGR2HLS)
-        #cv2.imshow("HLS", hls)
+        # cv2.imshow("HLS", hls)
         ################### Isolate possible lane line edges ######################
 
         # Perform Sobel edge detection on the L (lightness) channel of
+        if self.filename == 'challenge_video.mp4':
 
-        _, sxbinary = edge.threshold(hls[:, :, 1], thresh=(70, 255))
-        sxbinary = edge.blur_gaussian(sxbinary, ksize=3)  # Reduce noise
+            _, sxbinary = edge.threshold(hls[:, :, 1], thresh=(70, 255))
+            sxbinary = edge.blur_gaussian(sxbinary, ksize=3)  # Reduce noise
 
-        # 1s will be in the cells with the highest Sobel derivative values
-        # (i.e. strongest lane line edges)
-        sxbinary = edge.mag_thresh(sxbinary, sobel_kernel=3, thresh=(3, 255))
+            # 1s will be in the cells with the highest Sobel derivative values
+            # (i.e. strongest lane line edges)
+            sxbinary = edge.mag_thresh(sxbinary, sobel_kernel=3, thresh=(3, 255))
 
-        ######################## Isolate possible lane lines ######################
+            ######################## Isolate possible lane lines ######################
 
-        # Perform binary thresholding on the S (saturation) channel
+            # Perform binary thresholding on the S (saturation) channel
 
-        s_channel = hls[:, :, 2]  # use only the saturation channel data
-        _, s_binary = edge.threshold(s_channel, (50, 255),thresh_type=cv2.THRESH_BINARY_INV)
+            s_channel = hls[:, :, 2]  # use only the saturation channel data
+            _, s_binary = edge.threshold(s_channel, (50, 255), thresh_type=cv2.THRESH_BINARY_INV)
 
-        # Perform binary thresholding on the R (red) and green  channel of the
+            # Perform binary thresholding on the R (red) and green  channel of the
 
-        _, r_thresh = edge.threshold(frame[:, :, 2], thresh=(100, 255) )
-        #edit
-        _, g_thresh = edge.threshold(frame[:, :, 2], thresh=(100, 255) )
+            _, r_thresh = edge.threshold(frame[:, :, 2], thresh=(100, 255))
+            # edit
+            _, g_thresh = edge.threshold(frame[:, :, 2], thresh=(100, 255))
 
+            # Lane lines should be pure in color and have high red  and green channels values
+            # Bitwise AND operation to reduce noise and black-out any pixels that
+            rs_binary1 = cv2.bitwise_and(s_binary, r_thresh)
+            rs_binary = cv2.bitwise_and(rs_binary1, g_thresh)
+        else:
+            _, sxbinary = edge.threshold(hls[:, :, 1], thresh=(200, 255))
+            sxbinary = edge.blur_gaussian(sxbinary, ksize=3)  # Reduce noise
 
+            # 1s will be in the cells with the highest Sobel derivative values
+            # (i.e. strongest lane line edges)
+            sxbinary = edge.mag_thresh(sxbinary, sobel_kernel=3, thresh=(40, 255))
 
-        # Lane lines should be pure in color and have high red  and green channels values
-        # Bitwise AND operation to reduce noise and black-out any pixels that
-        rs_binary1 = cv2.bitwise_and(s_binary, r_thresh)
-        rs_binary = cv2.bitwise_and(rs_binary1, g_thresh)
-        #cv2.imshow("RS Binary", rs_binary)
+            ######################## Isolate possible lane lines ######################
+
+            # Perform binary thresholding on the S (saturation) channel
+
+            s_channel = hls[:, :, 2]  # use only the saturation channel data
+            _, s_binary = edge.threshold(s_channel, (150, 255), thresh_type=cv2.ADAPTIVE_THRESH_MEAN_C)
+
+            # Perform binary thresholding on the R (red) and green  channel of the
+
+            _, r_thresh = edge.threshold(frame[:, :, 2], thresh=(200, 255))
+            # edit
+
+            # Lane lines should be pure in color and have high red  and green channels values
+            # Bitwise AND operation to reduce noise and black-out any pixels that
+            rs_binary = cv2.bitwise_and(s_binary, r_thresh)
+
+        # cv2.imshow("RS Binary", rs_binary)
 
         ### Combine the possible lane lines with the possible lane line edges ####
         self.lane_line_markings = cv2.bitwise_or(rs_binary, sxbinary.astype(
@@ -683,7 +706,8 @@ class Lane:
         cv2.destroyAllWindows()
         # edit
 
-def increase_brightness(img, value = 30):
+
+def increase_brightness(img, value=30):
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
     h, s, v = cv2.split(hsv)
 
@@ -693,21 +717,18 @@ def increase_brightness(img, value = 30):
 
     final_hsv = cv2.merge((h, s, v))
     img = cv2.cvtColor(final_hsv, cv2.COLOR_HSV2BGR)
-    return img    
+    return img
+
+
 # --- main function to run ---
 def main():
-
     # --- For commandLine ---
-    filePath = None # --- initial Value ---
-    if filePath is None:
-        filename = "challenge_video.mp4"
-        output_filename = "OutVideo.mp4"
-    else:
-        filePath = sys.argv[1]
-        filename = filePath.split("/")[-1]
-        output_filename = sys.argv[2] # --- to save the file in totally another path ---
+    filename = ''
+    if len(sys.argv) > 1:
+        filename = sys.argv[1]
+        print(len(sys.argv))
 
-
+    # output_filename = sys.argv[2]  # --- to save the file in totally another path ---
 
 
     # Load a video
@@ -725,10 +746,12 @@ def main():
 
         # Capture one frame at a time
         success, frame = cap.read()
-            #  improve video brightness
-        frame = increase_brightness(frame, value=60)
-        #  improve video contrast
-        cv2.normalize(frame, frame,45, 255, cv2.NORM_MINMAX)
+        #  improve video brightness
+        if filename == 'challenge_video.mp4':
+            frame = increase_brightness(frame, value=60)
+
+            #  improve video contrast
+            cv2.normalize(frame, frame, 45, 255, cv2.NORM_MINMAX)
 
         if success:
 
@@ -741,9 +764,9 @@ def main():
             original_frame = frame.copy()
 
             # Create a Lane object
-            lane_obj = Lane(orig_frame=original_frame)
-            
-             # Perform thresholding to isolate lane lines
+            lane_obj = Lane(orig_frame=original_frame, filename=filename)
+
+            # Perform thresholding to isolate lane lines
             lane_line_markings = lane_obj.get_line_markings()
 
             # Plot the region of interest on the image
@@ -751,21 +774,20 @@ def main():
 
             warped_frame = lane_obj.perspective_transform(plot=True)
 
-
             # ---
             # Generate the image histogram to serve as a starting point
             # for finding lane line pixels
             histogram = lane_obj.calculate_histogram(plot=True)
-            
+
             # Find lane line pixels using the sliding window method
             left_fit, right_fit = lane_obj.get_lane_line_indices_sliding_windows(
-                plot= True)
+                plot=True)
             # Fill in the lane line
             lane_obj.get_lane_line_previous_window(left_fit, right_fit, plot=True)
-            
+
             # Overlay lines on the original frame
             frame_with_lane_lines = lane_obj.overlay_lane_lines(plot=True)
-            
+
             # Calculate lane line curvature (left and right lane lines)
             lane_obj.calculate_curvature(print_to_terminal=False)
 
