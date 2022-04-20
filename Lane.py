@@ -708,9 +708,15 @@ def main():
         filename = filePath.split("/")[-1]
         output_filename = sys.argv[2] # --- to save the file in totally another path ---
 
-    if sys.argv[3] == "True" or sys.argv[3] == "1" or sys.argv[3] == 1: # --- Debug mode ---
-        debugFlag = True
-        
+    debugMode = None
+    if len(sys.argv) > 3 :# ---then debugmode entered as input ---
+        debugMode = sys.argv[3]
+    if debugMode is None:
+        debugFlag = False
+    else:
+        if debugMode == "True" or debugMode == "1" or debugMode == 1: # --- Debug mode ---
+            debugFlag = True
+
 
     # Load a video
     cap = cv2.VideoCapture(filename)
