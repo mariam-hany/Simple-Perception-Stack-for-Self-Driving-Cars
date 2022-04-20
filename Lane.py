@@ -549,7 +549,8 @@ class Lane:
 
         _, sxbinary = edge.threshold(hls[:, :, 1], thresh=(70, 255))
         sxbinary = edge.blur_gaussian(sxbinary, ksize=3)  # Reduce noise
-        cv2.imshow("SX Binary", sxbinary)
+        #Uncomment next line for debugging
+        #cv2.imshow("SX Binary", sxbinary)
         # 1s will be in the cells with the highest Sobel derivative values
         # (i.e. strongest lane line edges)
         sxbinary = edge.mag_thresh(sxbinary, sobel_kernel=3, thresh=(3, 255))
