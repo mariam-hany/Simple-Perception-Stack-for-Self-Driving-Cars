@@ -154,6 +154,48 @@ class Lane:
 
         return self.warped_frame
     
+        def overlay_lane_lines(self, plot=False):
+        """
+        Overlay lane lines on the original frame
+        :param: Plot the lane lines if True
+        :return: Lane with overlay
+        """
+        # Generate an image to draw the lane lines on
+        warp_zero = np.zeros_like(self.warped_frame).astype(np.uint8)
+        color_warp = np.dstack((warp_zero, warp_zero, warp_zero))
+
+        # Recast the x and y points into usable format for cv2.fillPoly()
+        pts_left = np.array([np.transpose(np.vstack([
+            self.left_fitx, self.ploty]))])
+        pts_right = np.array([np.flipud(np.transpose(np.vstack([
+            self.right_fitx, self.ploty])))])
+        pts = np.hstack((pts_left, pts_right))
+
+        # Draw lane on the warped blank image
+        cv2.fillPoly(color_warp, np.int_([pts]), (0, 255, 0))
+
+        # Warp the blank back to original image space using inverse perspective
+        # matrix (Minv)
+        newwarp = cv2.warpPerspective(color_warp, self.inv_transformation_matrix, (
+            self.orig_frame.shape[
+                1], self.orig_frame.shape[0]))
+
+        # Combine the result with the original image
+        result = cv2.addWeighted(self.orig_frame, 1, newwarp, 0.3, 0)
+
+        if plot == True:
+            # Plot the figures
+            figure, (ax1, ax2) = plt.subplots(2, 1)  # 2 rows, 1 column
+            figure.set_size_inches(10, 10)
+            figure.tight_layout(pad=3.0)
+            ax1.imshow(cv2.cvtColor(self.orig_frame, cv2.COLOR_BGR2RGB))
+            ax2.imshow(cv2.cvtColor(result, cv2.COLOR_BGR2RGB))
+            ax1.set_title("Original Frame")
+            ax2.set_title("Original Frame With Lane Overlay")
+            plt.show()
+
+        return result
+    
         def get_lane_line_previous_window(self, left_fit, right_fit, plot=False):
         """
         Use the lane line from the previous sliding window to get the parameters
