@@ -308,6 +308,32 @@ class Lane:
             plt.show()
 
         return self.histogram
+     def plot_roi(self, frame=None, plot=False):
+        """
+        Plot the region of interest on an image.
+        :param: frame The current image frame
+        :param: plot Plot the roi image if True
+        """
+        if plot == False:
+            return
+
+        if frame is None:
+            frame = self.orig_frame.copy()
+
+        # Overlay trapezoid on the frame
+        this_image = cv2.polylines(frame, np.int32([
+            self.roi_points]), True, (147, 20, 255), 3)
+
+        # Display the image
+        while (1):
+            cv2.imshow('ROI Image', this_image)
+
+            # Press any key to stop
+            if cv2.waitKey(0):
+                break
+
+        cv2.destroyAllWindows()
+        # edit
 
 def increase_brightness(img, value = 30):
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
