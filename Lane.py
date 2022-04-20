@@ -153,6 +153,135 @@ class Lane:
             cv2.destroyAllWindows()
 
         return self.warped_frame
+    
+        def get_lane_line_previous_window(self, left_fit, right_fit, plot=False):
+        """
+        Use the lane line from the previous sliding window to get the parameters
+        for the polynomial line for filling in the lane line
+        :param: left_fit Polynomial function of the left lane line
+        :param: right_fit Polynomial function of the right lane line
+        :param: plot To display an image or not
+        """
+        # margin is a sliding window parameter
+        margin = self.margin
+
+        # Find the x and y coordinates of all the nonzero
+        # (i.e. white) pixels in the frame.
+        nonzero = self.warped_frame.nonzero()
+        nonzeroy = np.array(nonzero[0])
+        nonzerox = np.array(nonzero[1])
+
+        # Store left and right lane pixel indices
+        left_lane_inds = ((nonzerox > (left_fit[0] * (
+                nonzeroy ** 2) + left_fit[1] * nonzeroy + left_fit[2] - margin)) & (
+                                  nonzerox < (left_fit[0] * (
+                                  nonzeroy ** 2) + left_fit[1] * nonzeroy + left_fit[2] + margin)))
+        right_lane_inds = ((nonzerox > (right_fit[0] * (
+                nonzeroy ** 2) + right_fit[1] * nonzeroy + right_fit[2] - margin)) & (
+                                   nonzerox < (right_fit[0] * (
+                                   nonzeroy ** 2) + right_fit[1] * nonzeroy + right_fit[2] + margin)))
+        self.left_lane_inds = left_lane_inds
+        self.right_lane_inds = right_lane_inds
+
+        # Get the left and right lane line pixel locations
+        leftx = nonzerox[left_lane_inds]
+        lefty = nonzeroy[left_lane_inds]
+        rightx = nonzerox[right_lane_inds]
+        righty = nonzeroy[right_lane_inds]
+
+        global prev_leftx2
+        global prev_lefty2
+        global prev_rightx2
+        global prev_righty2
+        global prev_left_fit2
+        global prev_right_fit2
+
+        # Make sure we have nonzero pixels
+        if len(leftx) == 0 or len(lefty) == 0 or len(rightx) == 0 or len(righty) == 0:
+            leftx = prev_leftx2
+            lefty = prev_lefty2
+            rightx = prev_rightx2
+            righty = prev_righty2
+
+        self.leftx = leftx
+        self.rightx = rightx
+        self.lefty = lefty
+        self.righty = righty
+
+        left_fit = np.polyfit(lefty, leftx, 2)
+        right_fit = np.polyfit(righty, rightx, 2)
+
+        # Add the latest polynomial coefficients
+        prev_left_fit2.append(left_fit)
+        prev_right_fit2.append(right_fit)
+
+        # Calculate the moving average
+        if len(prev_left_fit2) > 15:
+            prev_left_fit2.pop(0)
+            prev_right_fit2.pop(0)
+            left_fit = sum(prev_left_fit2) / len(prev_left_fit2)
+            right_fit = sum(prev_right_fit2) / len(prev_right_fit2)
+
+        self.left_fit = left_fit
+        self.right_fit = right_fit
+
+        prev_leftx2 = leftx
+        prev_lefty2 = lefty
+        prev_rightx2 = rightx
+        prev_righty2 = righty
+
+        # Create the x and y values to plot on the image
+        ploty = np.linspace(
+            0, self.warped_frame.shape[0] - 1, self.warped_frame.shape[0])
+        left_fitx = left_fit[0] * ploty ** 2 + left_fit[1] * ploty + left_fit[2]
+        right_fitx = right_fit[0] * ploty ** 2 + right_fit[1] * ploty + right_fit[2]
+        self.ploty = ploty
+        self.left_fitx = left_fitx
+        self.right_fitx = right_fitx
+
+        if plot == True:
+            # Generate images to draw on
+            out_img = np.dstack((self.warped_frame, self.warped_frame, (
+                self.warped_frame))) * 255
+            window_img = np.zeros_like(out_img)
+
+            # Add color to the left and right line pixels
+            out_img[nonzeroy[left_lane_inds], nonzerox[left_lane_inds]] = [255, 0, 0]
+            out_img[nonzeroy[right_lane_inds], nonzerox[right_lane_inds]] = [
+                0, 0, 255]
+            # Create a polygon to show the search window area, and recast
+            # the x and y points into a usable format for cv2.fillPoly()
+            margin = self.margin
+            left_line_window1 = np.array([np.transpose(np.vstack([
+                left_fitx - margin, ploty]))])
+            left_line_window2 = np.array([np.flipud(np.transpose(np.vstack([
+                left_fitx + margin, ploty])))])
+            left_line_pts = np.hstack((left_line_window1, left_line_window2))
+            right_line_window1 = np.array([np.transpose(np.vstack([
+                right_fitx - margin, ploty]))])
+            right_line_window2 = np.array([np.flipud(np.transpose(np.vstack([
+                right_fitx + margin, ploty])))])
+            right_line_pts = np.hstack((right_line_window1, right_line_window2))
+
+            # Draw the lane onto the warped blank image
+            cv2.fillPoly(window_img, int([left_line_pts]), (0, 255, 0))
+            cv2.fillPoly(window_img, int([right_line_pts]), (0, 255, 0))
+            result = cv2.addWeighted(out_img, 1, window_img, 0.3, 0)
+
+            # Plot the figures
+            figure, (ax1, ax2, ax3) = plt.subplots(3, 1)  # 3 rows, 1 column
+            figure.set_size_inches(10, 10)
+            figure.tight_layout(pad=3.0)
+            ax1.imshow(cv2.cvtColor(self.orig_frame, cv2.COLOR_BGR2RGB))
+            ax2.imshow(self.warped_frame, cmap='gray')
+            ax3.imshow(result)
+            ax3.plot(left_fitx, ploty, color='yellow')
+            ax3.plot(right_fitx, ploty, color='yellow')
+            ax1.set_title("Original Frame")
+            ax2.set_title("Warped Frame")
+            ax3.set_title("Warped Frame With Search Window")
+            plt.show()
+
 
         def get_lane_line_indices_sliding_windows(self, plot=False):
         """
