@@ -743,14 +743,16 @@ def main():
             lane_line_markings = lane_obj.get_line_markings()
 
             # Plot the region of interest on the image
+            #Set plot to True for debugging
             lane_obj.plot_roi(plot=False)
-
+            #Set plot to True for debugging
             warped_frame = lane_obj.perspective_transform(plot=False)
 
 
             # ---
             # Generate the image histogram to serve as a starting point
             # for finding lane line pixels
+            #Set plot to True for debugging
             histogram = lane_obj.calculate_histogram(plot=False)
             
             # Find lane line pixels using the sliding window method
