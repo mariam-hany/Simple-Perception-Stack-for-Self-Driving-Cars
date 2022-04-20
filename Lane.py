@@ -789,7 +789,8 @@ def main():
             result.write(frame_with_lane_lines2)
 
             # Display the frame
-            cv2.imshow("Frame", frame_with_lane_lines2)
+            if debugFlag == False:
+                cv2.imshow("Frame", frame_with_lane_lines2)
 
             # Display frame for X milliseconds and check if q key is pressed
             # q == quit
