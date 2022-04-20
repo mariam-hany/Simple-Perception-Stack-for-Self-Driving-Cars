@@ -58,15 +58,4 @@ def sobel(img_channel, orient='x', sobel_kernel=3):
 def threshold(channel, thresh=(128, 255), thresh_type=cv2.THRESH_BINARY):
   
   return cv2.threshold(channel, thresh[0], thresh[1], thresh_type)
-  
-  
-  
-  
-  
-  
-  
-  
 
-    # If pixel intensity is greater than thresh[0], make that value
-    # white (255), else set it to black (0)
-    return cv2.threshold(channel, thresh[0], thresh[1], thresh_type)

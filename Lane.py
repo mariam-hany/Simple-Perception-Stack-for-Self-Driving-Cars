@@ -1,3 +1,4 @@
+import sys
 import cv2  # Import the OpenCV library to enable computer vision
 import numpy as np  # Import the NumPy scientific computing library
 import edge_detection as edge  # Handles the detection of lane lines
@@ -63,13 +64,27 @@ class Lane:
          # Four corners of the trapezoid-shaped region of interest
         # You need to find these corners manually.
         centerOfCar = carPosition / 2.0
-        self.roi_points = np.float32([ # ---
-           (int(0.478 * width), int(0.71 * height)),  # Top-left corner  
-           (450, height - 1),  # Bottom-left corner                      
-           (int(1.2 * width), height - 1),  # Bottom-right corner       
-           (int(0.68 * width), int(0.71* height))  # Top-right corner    
-
-        ])
+        if filename == "project_video.mp4"  : #projectVideo
+            self.roi_points = np.float32([
+                (int(0.421 * width), int(0.68 * height)),  # Top-left corner
+                (183, height - 1),  # Bottom-left corner
+                (int(0.958 * width), height - 1),  # Bottom-right corner
+                (int(0.61 * width), int(0.682 * height))  # Top-right corner
+            ])
+        elif filename == "challenge_video.mp4":
+            self.roi_points = np.float32([  # ---
+                (int(0.478 * width), int(0.71 * height)),  # Top-left corner
+                (450, height - 1),  # Bottom-left corner
+                (int(1.2 * width), height - 1),  # Bottom-right corner
+                (int(0.68 * width), int(0.71 * height))  # Top-right corner
+            ])
+        elif filename == "harder_challenge_video.mp4":
+            self.roi_points = np.float32([  # ---
+                (int(0.411 * width), int(0.68 * height)),  # Top-left corner
+                (183, height - 1),  # Bottom-left corner
+                (int(0.81 * width), height - 1),  # Bottom-right corner
+                (int(0.571 * width), int(0.682 * height))  # Top-right corner
+            ])
 
         # The desired corner locations  of the region of interest
         # after we perform perspective transformation.
@@ -324,6 +339,14 @@ class Lane:
             ax3.set_title("Warped Frame With Search Window")
             plt.show()
 
+    def histogram_peak(self):
+
+        midpoint = np.int(self.histogram.shape[0] / 2)
+        leftx_base = np.argmax(self.histogram[:midpoint])
+        rightx_base = np.argmax(self.histogram[midpoint:]) + midpoint
+
+        # (x coordinate of left peak, x coordinate of right peak)
+        return leftx_base, rightx_base
 
     def get_lane_line_indices_sliding_windows(self, plot=False):
         """
@@ -510,8 +533,8 @@ class Lane:
 
         return center_offset
     
-        def get_line_markings(self, frame=None):
-        
+    def get_line_markings(self, frame=None):
+
         if frame is None:
             frame = self.orig_frame
             #frame = self.warped_frame
@@ -523,7 +546,7 @@ class Lane:
         ################### Isolate possible lane line edges ######################
 
         # Perform Sobel edge detection on the L (lightness) channel of
-      
+
         _, sxbinary = edge.threshold(hls[:, :, 1], thresh=(70, 255))
         sxbinary = edge.blur_gaussian(sxbinary, ksize=3)  # Reduce noise
 
@@ -534,12 +557,12 @@ class Lane:
         ######################## Isolate possible lane lines ######################
 
         # Perform binary thresholding on the S (saturation) channel
-      
+
         s_channel = hls[:, :, 2]  # use only the saturation channel data
         _, s_binary = edge.threshold(s_channel, (50, 255),thresh_type=cv2.THRESH_BINARY_INV)
 
         # Perform binary thresholding on the R (red) and green  channel of the
-    
+
         _, r_thresh = edge.threshold(frame[:, :, 2], thresh=(100, 255) )
         #edit
         _, g_thresh = edge.threshold(frame[:, :, 2], thresh=(100, 255) )
@@ -556,7 +579,7 @@ class Lane:
         self.lane_line_markings = cv2.bitwise_or(rs_binary, sxbinary.astype(
             np.uint8))
         return self.lane_line_markings
-    
+
     def calculate_curvature(self, print_to_terminal=False):
 
         y_eval = np.max(self.ploty)
@@ -631,7 +654,8 @@ class Lane:
             plt.show()
 
         return self.histogram
-     def plot_roi(self, frame=None, plot=False):
+
+    def plot_roi(self, frame=None, plot=False):
         """
         Plot the region of interest on an image.
         :param: frame The current image frame
@@ -671,6 +695,15 @@ def increase_brightness(img, value = 30):
     return img    
 # --- main function to run ---
 def main():
+
+    # --- For commandLine ---
+    filePath = None # --- initial Value ---
+    if filePath is None:
+        filename = "challenge_video.mp4"
+    else:
+        filePath = sys.argv[1]
+        filename = filePath.split("/")[-1]
+
     # Load a video
     cap = cv2.VideoCapture(filename)
 
