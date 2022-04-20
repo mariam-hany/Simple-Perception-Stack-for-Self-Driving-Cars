@@ -17,6 +17,6 @@ https://colab.research.google.com/drive/1sFgpCVKVVvqQzqjFeow3hsVB5IJrOIJT?usp=sh
     **bash -c './file.sh -d 1 -p debug.py -i video.mp4 -o outputvideo.mp4'**
     
     
-    
+   **Note:** the videos must be in the same directory of the python scripts and the bash script
  
 
