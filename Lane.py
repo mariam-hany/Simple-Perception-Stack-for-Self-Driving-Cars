@@ -717,6 +717,16 @@ def main():
             # Generate the image histogram to serve as a starting point
             # for finding lane line pixels
             histogram = lane_obj.calculate_histogram(plot=False)
+            
+            # Find lane line pixels using the sliding window method
+            left_fit, right_fit = lane_obj.get_lane_line_indices_sliding_windows(
+                plot= False)
+            # Fill in the lane line
+            lane_obj.get_lane_line_previous_window(left_fit, right_fit, plot=False)
+            
+            # Overlay lines on the original frame
+            frame_with_lane_lines = lane_obj.overlay_lane_lines(plot=False)
+            
             # Calculate lane line curvature (left and right lane lines)
             lane_obj.calculate_curvature(print_to_terminal=False)
 
