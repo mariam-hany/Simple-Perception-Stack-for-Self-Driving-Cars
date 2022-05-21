@@ -38,3 +38,26 @@ CONFIDENCE_THRESHOLD = args.confidence
 NMS_THRESHOLD = args.threshold
 if not Path(args.input).exists():
     raise FileNotFoundError("Path to video file is not exist.")
+    
+    
+vc = cv2.VideoCapture(args.input)
+weights = glob.glob("yolo/*.weights")[0]
+labels = glob.glob("yolo/*.txt")[0]
+cfg = glob.glob("yolo/*.cfg")[0]
+
+logger.info("Using {} weights ,{} configs and {} labels.".format(weights, cfg, labels))
+
+class_names = list()
+with open(labels, "r") as f:
+    class_names = [cname.strip() for cname in f.readlines()]
+
+COLORS = np.random.randint(0, 255, size=(len(class_names), 3), dtype="uint8")
+
+net = cv2.dnn.readNetFromDarknet(cfg, weights)
+net.setPreferableBackend(cv2.dnn.DNN_BACKEND_CUDA)
+net.setPreferableTarget(cv2.dnn.DNN_TARGET_CUDA)
+
+layer = net.getLayerNames()
+# layer = [layer[i[0] - 1] for i in net.getUnconnectedOutLayers()]
+layer = [layer[i - 1] for i in net.getUnconnectedOutLayers()]
+writer = None
